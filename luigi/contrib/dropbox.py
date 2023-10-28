@@ -41,6 +41,7 @@ except ImportError:
 def accept_trailing_slash_in_existing_dirpaths(func):
     @wraps(func)
     def wrapped(self, path, *args, **kwargs):
+        path = str(path)
         if path != '/' and path.endswith('/'):
             logger.warning("Dropbox paths should NOT have trailing slashes. This causes additional API calls")
             logger.warning("Consider modifying your calls to {}, so that they don't use paths than end with '/'".format(func.__name__))
@@ -56,6 +57,7 @@ def accept_trailing_slash_in_existing_dirpaths(func):
 def accept_trailing_slash(func):
     @wraps(func)
     def wrapped(self, path, *args, **kwargs):
+        path = str(path)
         if path != '/' and path.endswith('/'):
             path = path[:-1]
         return func(self, path, *args, **kwargs)
@@ -144,11 +146,11 @@ class DropboxClient(FileSystem):
 
     @accept_trailing_slash_in_existing_dirpaths
     def move(self, path, dest):
-        self.conn.files_move_v2(from_path=path, to_path=dest)
+        self.conn.files_move_v2(from_path=str(path), to_path=str(dest))
 
     @accept_trailing_slash_in_existing_dirpaths
     def copy(self, path, dest):
-        self.conn.files_copy_v2(from_path=path, to_path=dest)
+        self.conn.files_copy_v2(from_path=str(path), to_path=str(dest))
 
     def download_as_bytes(self, path):
         metadata, response = self.conn.files_download(path)
@@ -293,7 +295,7 @@ class DropboxTarget(FileSystemTarget):
         if not token:
             raise ValueError("The token parameter must contain a valid Dropbox Oauth2 Token")
 
-        self.path = path
+        self.path = str(path)
         self.token = token
         self.client = DropboxClient(token, user_agent)
         self.format = format or luigi.format.get_default_format()
